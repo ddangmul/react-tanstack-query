@@ -5,18 +5,26 @@ import Modal from "../UI/Modal.jsx";
 import EventForm from "./EventForm.jsx";
 import { createNewEvent } from "../../util/http.js";
 import ErrorBlock from "../UI/ErrorBlock.jsx";
+import { queryClient } from "../../util/http.js";
 
 export default function NewEvent() {
   const navigate = useNavigate();
 
-  // mutate : 컴포넌트 내 어디서든 이 함수를 호출해 요청 전송
   const { mutate, isPending, isError, error } = useMutation({
-    // mutationKey: 필수 아님. 변형은 응답 데이터를 캐시처리하지 않음. 백엔드에서 데이터를 변경하기 때문
     mutationFn: createNewEvent,
+    onSuccess: () => {
+      // 성공한 시에만 navigate() 호출
+      navigate("/events");
+      queryClient.invalidateQueries({
+        queryKey: ["events"],
+        // exact: true, 해당 쿼리키와 정확히 일치하는 쿼리만
+      }); // 변형 성공 시 쿼리 무효화: 해당 쿼리키가 포함된 모든 쿼리에게 데이터를 다시 불러오라고 알림
+    },
   });
 
   function handleSubmit(formData) {
     mutate({ event: formData }); // 폼이 제출될 때마다 리액트 쿼리를 이용해 요청 전송
+    navigate();
   }
 
   return (
